@@ -64,6 +64,7 @@ export const listLiveTvChannelsQueryQueryMax = 80;
 
 export const listLiveTvChannelsQueryCategoryMax = 60;
 
+export const listLiveTvChannelsQueryCountryRegExp = new RegExp('^[a-zA-Z]{2}$');
 export const listLiveTvChannelsQueryLimitDefault = 48;
 export const listLiveTvChannelsQueryLimitMax = 100;
 
@@ -72,6 +73,7 @@ export const listLiveTvChannelsQueryLimitMax = 100;
 export const ListLiveTvChannelsQueryParams = zod.object({
   "query": zod.coerce.string().max(listLiveTvChannelsQueryQueryMax).optional(),
   "category": zod.coerce.string().max(listLiveTvChannelsQueryCategoryMax).optional(),
+  "country": zod.coerce.string().regex(listLiveTvChannelsQueryCountryRegExp).optional().describe('ISO 3166-1 alpha-2 country code used by iptv-org country playlists'),
   "limit": zod.coerce.number().min(1).max(listLiveTvChannelsQueryLimitMax).default(listLiveTvChannelsQueryLimitDefault)
 })
 

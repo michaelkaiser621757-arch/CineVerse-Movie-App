@@ -6,6 +6,7 @@ import {
 
 const router: IRouter = Router();
 const PLAYLIST_URL = "https://iptv-org.github.io/iptv/index.m3u";
+const COUNTRY_PLAYLIST_URL = "https://iptv-org.github.io/iptv/countries";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 20_000;
 
@@ -24,7 +25,7 @@ type PlaylistCache = {
   expiresAt: number;
 };
 
-let playlistCache: PlaylistCache | null = null;
+const playlistCaches = new Map<string, PlaylistCache>();
 
 function attribute(line: string, name: string): string | null {
   const match = line.match(new RegExp(`${name}="([^"]*)"`, "i"));
@@ -87,13 +88,16 @@ function parsePlaylist(raw: string): LiveTvChannel[] {
   return channels;
 }
 
-async function getPlaylistChannels(): Promise<PlaylistCache> {
-  if (playlistCache && playlistCache.expiresAt > Date.now()) return playlistCache;
+async function getPlaylistChannels(country?: string): Promise<PlaylistCache> {
+  const cacheKey = country || "all";
+  const cached = playlistCaches.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached;
+  const playlistUrl = country ? `${COUNTRY_PLAYLIST_URL}/${country}.m3u` : PLAYLIST_URL;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const response = await fetch(PLAYLIST_URL, {
+    const response = await fetch(playlistUrl, {
       headers: { Accept: "audio/x-mpegurl, application/x-mpegurl, text/plain" },
       signal: controller.signal,
     });
@@ -101,12 +105,13 @@ async function getPlaylistChannels(): Promise<PlaylistCache> {
     const channels = parsePlaylist(await response.text());
     if (!channels.length) throw new Error("Playlist returned no supported HTTPS HLS channels");
 
-    playlistCache = {
+    const nextCache: PlaylistCache = {
       channels,
       fetchedAt: new Date().toISOString(),
       expiresAt: Date.now() + CACHE_TTL_MS,
     };
-    return playlistCache;
+    playlistCaches.set(cacheKey, nextCache);
+    return nextCache;
   } finally {
     clearTimeout(timeout);
   }
@@ -120,7 +125,8 @@ router.get("/live-tv/channels", async (req, res): Promise<void> => {
   }
 
   try {
-    const { channels: allChannels, fetchedAt } = await getPlaylistChannels();
+    const { country } = parsed.data;
+    const { channels: allChannels, fetchedAt } = await getPlaylistChannels(country?.toLowerCase());
     const query = parsed.data.query?.toLowerCase();
     const category = parsed.data.category?.toLowerCase();
     const filtered = allChannels.filter((channel) => {

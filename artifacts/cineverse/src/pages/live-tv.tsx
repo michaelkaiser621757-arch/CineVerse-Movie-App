@@ -3,6 +3,25 @@ import { AlertTriangle, LoaderCircle, Play, Radio, Search, ShieldCheck } from "l
 import { getListLiveTvChannelsQueryKey, useListLiveTvChannels, type LiveTvChannel } from "@workspace/api-client-react";
 import { LiveTvPlayer } from "@/components/live-tv-player";
 
+const COUNTRY_OPTIONS = [
+  { value: "all", label: "All countries" },
+  { value: "bd", label: "Bangladesh" },
+  { value: "in", label: "India" },
+  { value: "us", label: "United States" },
+  { value: "gb", label: "United Kingdom" },
+  { value: "ca", label: "Canada" },
+  { value: "au", label: "Australia" },
+  { value: "de", label: "Germany" },
+  { value: "fr", label: "France" },
+  { value: "jp", label: "Japan" },
+  { value: "kr", label: "South Korea" },
+  { value: "sg", label: "Singapore" },
+  { value: "ae", label: "United Arab Emirates" },
+  { value: "pk", label: "Pakistan" },
+  { value: "np", label: "Nepal" },
+  { value: "lk", label: "Sri Lanka" },
+] as const;
+
 function channelMark(name: string) {
   return name
     .replace(/\([^)]*\)/g, "")
@@ -18,12 +37,14 @@ export default function LiveTvPage() {
   const [input, setInput] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [category, setCategory] = useState("All");
+  const [country, setCountry] = useState("all");
   const [selected, setSelected] = useState<LiveTvChannel | null>(null);
   const params = useMemo(() => ({
     query: activeQuery || undefined,
     category: category === "All" ? undefined : category,
+    country: country === "all" ? undefined : country,
     limit: 60,
-  }), [activeQuery, category]);
+  }), [activeQuery, category, country]);
   const channelsQuery = useListLiveTvChannels(params, { query: { queryKey: getListLiveTvChannelsQueryKey(params) } });
   const channels = channelsQuery.data?.channels ?? [];
   const categories = channelsQuery.data?.categories ?? [];
@@ -52,6 +73,13 @@ export default function LiveTvPage() {
           <input type="search" data-testid="input-live-tv-search" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Search channels or regions..." className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
           <button type="submit" data-testid="button-live-tv-search" className="rounded-lg bg-primary px-5 py-2.5 text-xs font-extrabold text-primary-foreground transition hover:brightness-110">Search</button>
         </form>
+
+        <div className="mt-3 flex max-w-3xl items-center gap-3">
+          <label htmlFor="live-tv-country" className="font-mono-cine text-[10px] uppercase tracking-[.16em] text-muted-foreground">Country</label>
+          <select id="live-tv-country" data-testid="select-live-tv-country" value={country} onChange={(event) => { setCountry(event.target.value); setCategory("All"); }} className="min-w-0 rounded-lg border border-white/[.12] bg-card px-3 py-2 text-xs font-semibold text-foreground outline-none transition focus:border-primary/60">
+            {COUNTRY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </div>
 
         <div className="mt-8 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {["All", ...categories.slice(0, 24)].map((item) => <button type="button" key={item} data-testid={`button-live-category-${item.toLowerCase().replaceAll(" ", "-")}`} onClick={() => setCategory(item)} className={`shrink-0 rounded-full border px-4 py-2 text-[11px] font-bold transition ${category === item ? "border-primary bg-primary text-primary-foreground" : "border-white/10 bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"}`}>{item}</button>)}

@@ -141,6 +141,11 @@ query?: string;
  */
 category?: string;
 /**
+ * ISO 3166-1 alpha-2 country code used by iptv-org country playlists
+ * @pattern ^[a-zA-Z]{2}$
+ */
+country?: string;
+/**
  * @minimum 1
  * @maximum 100
  */
