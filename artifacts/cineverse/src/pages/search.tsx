@@ -1,23 +1,39 @@
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Filter, RotateCcw, Search as SearchIcon, SlidersHorizontal } from "lucide-react";
 import type { Media } from "@workspace/api-client-react";
 import { getDiscoverCatalogQueryKey, getSearchCatalogQueryKey, useDiscoverCatalog, useSearchCatalog } from "@workspace/api-client-react";
 import { MediaCard } from "@/components/media-card";
 import { MediaModal } from "@/components/media-modal";
 import { useWatchlist } from "@/hooks/use-watchlist";
+import { useLocation } from "wouter";
 
 type MediaType = "movie" | "tv";
 type Sort = "trending" | "popular" | "top-rated" | "upcoming";
 
 export default function SearchPage() {
-  const [input, setInput] = useState("");
-  const [query, setQuery] = useState("");
-  const [type, setType] = useState<MediaType>("movie");
-  const [sort, setSort] = useState<Sort>("trending");
+  const [location] = useLocation();
+  const routeParams = useMemo(() => new URLSearchParams(location.split("?")[1] ?? ""), [location]);
+  const [input, setInput] = useState(() => routeParams.get("query") ?? "");
+  const [query, setQuery] = useState(() => routeParams.get("query") ?? "");
+  const [type, setType] = useState<MediaType>(() => routeParams.get("type") === "tv" ? "tv" : "movie");
+  const [sort, setSort] = useState<Sort>(() => {
+    const value = routeParams.get("sort");
+    return value === "popular" || value === "top-rated" || value === "upcoming" ? value : "trending";
+  });
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Media | null>(null);
   const { items, has, toggle } = useWatchlist();
   const savedIds = useMemo(() => new Set(items.map((item) => item.id)), [items]);
+  useEffect(() => {
+    const nextQuery = routeParams.get("query") ?? "";
+    const nextType = routeParams.get("type") === "tv" ? "tv" : "movie";
+    const nextSort = routeParams.get("sort");
+    setInput(nextQuery);
+    setQuery(nextQuery);
+    setType(nextType);
+    setSort(nextSort === "popular" || nextSort === "top-rated" || nextSort === "upcoming" ? nextSort : "trending");
+    setPage(1);
+  }, [routeParams]);
   const searchParams = useMemo(() => ({ query, page }), [query, page]);
   const discoverParams = useMemo(() => ({ type, page, sort }), [type, page, sort]);
   const searchQuery = useSearchCatalog(searchParams, { query: { enabled: query.length > 0, queryKey: getSearchCatalogQueryKey(searchParams) } });

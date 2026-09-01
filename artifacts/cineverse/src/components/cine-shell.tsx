@@ -1,4 +1,4 @@
-import { Film, Heart, Home, Menu, Search, X } from "lucide-react";
+import { Film, Heart, Home, Menu, Radio, Search, Sparkles, Tv, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 
@@ -10,11 +10,19 @@ export function CineShell({ children }: { children: ReactNode }) {
     { href: "/search", label: "Find a title", icon: Search },
     { href: "/watchlist", label: "My list", icon: Heart },
   ];
+  const mobileLinks = [
+    { href: "/", label: "Home", icon: Home },
+    { href: "/search?type=movie&sort=popular", label: "Movies", icon: Film },
+    { href: "/search?type=tv&sort=popular", label: "Series", icon: Tv },
+    { href: "/search?query=Anime", label: "Anime", icon: Sparkles },
+    { href: "/search?query=Live%20TV", label: "Live TV", icon: Radio },
+  ];
+  const currentPath = location.split("?")[0];
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[.07] bg-[#080b13]/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-[72px] max-w-[1500px] items-center justify-between px-5 sm:px-8 lg:px-12">
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-white/[.07] bg-[#080b13]/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-[64px] max-w-[1500px] items-center justify-between px-5 sm:h-[72px] sm:px-8 lg:px-12">
           <Link href="/" data-testid="link-brand" className="group flex items-center gap-3">
             <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-[0_8px_24px_hsl(var(--primary)/.2)] transition-transform group-hover:rotate-[-8deg]">
               <Film size={18} strokeWidth={2.5} />
@@ -36,7 +44,7 @@ export function CineShell({ children }: { children: ReactNode }) {
             <button type="button" data-testid="button-mobile-menu" aria-label="Open navigation" onClick={() => setOpen(true)} className="grid size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-white/[.08] hover:text-foreground md:hidden">
               <Menu size={20} />
             </button>
-            <span className="ml-2 hidden size-8 place-items-center rounded-full border border-primary/40 bg-primary/10 font-mono-cine text-[10px] font-medium text-primary sm:grid">CV</span>
+            <span className="ml-2 grid size-9 place-items-center rounded-full border border-primary/40 bg-primary/10 font-mono-cine text-[10px] font-medium text-primary sm:size-8">CV</span>
           </div>
         </div>
       </header>
@@ -57,8 +65,28 @@ export function CineShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
-      <main className="pt-[72px]">{children}</main>
-      <footer className="border-t border-white/[.07] px-5 py-10 sm:px-8 lg:px-12">
+      <main className="pb-20 pt-[64px] sm:pt-[72px] md:pb-0">{children}</main>
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[.09] bg-[#080b13]/95 px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden" aria-label="Mobile navigation">
+        <div className="mx-auto grid max-w-lg grid-cols-5">
+          {mobileLinks.map(({ href, label, icon: Icon }) => {
+            const isActive = href === "/" ? currentPath === "/" : currentPath === "/search" && href.includes("search");
+            return (
+              <Link
+                key={label}
+                href={href}
+                data-testid={`link-bottom-${label.toLowerCase().replaceAll(" ", "-")}`}
+                aria-current={isActive ? "page" : undefined}
+                className={`relative flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[9px] font-semibold transition ${isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {isActive && <span className="absolute top-0 h-0.5 w-7 rounded-full bg-primary shadow-[0_0_16px_hsl(var(--primary)/.8)]" />}
+                <Icon size={17} strokeWidth={isActive ? 2.5 : 1.8} />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+      <footer className="hidden border-t border-white/[.07] px-5 py-10 md:block sm:px-8 lg:px-12">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p><span className="font-semibold text-foreground">CineVerse</span> — find your next favorite story.</p>
           <p className="font-mono-cine text-[10px] uppercase tracking-[.18em]">Discovery, not distribution</p>
