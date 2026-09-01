@@ -1,0 +1,135 @@
+Flutter অ্যাপে সম্পূর্ণ ফ্রিতে এবং আইনিভাবে (Legal) লাইভ টিভি চ্যানেল চালানোর জন্য আপনাকে Chewie এবং video_player প্যাকেজ ব্যবহার করতে হবে। ইন্টারনেটে থাকা ফ্রি এবং ওপেন সোর্স লাইভ টিভির লাইভ স্ট্রিম লিংকগুলো সাধারণত .m3u8 (HLS) ফরম্যাটের হয়ে থাকে, যা এই প্লেয়ারটি নিখুঁতভাবে প্লে করতে পারে।
+নিচে লাইভ টিভি প্লেয়ার সেটআপ করার সম্পূর্ণ গাইড দেওয়া হলো:
+## ১. প্রয়োজনীয় প্যাকেজ যুক্ত করুন
+প্রথমে আপনার Flutter প্রজেক্টের pubspec.yaml ফাইলে নিচের প্যাকেজগুলো যুক্ত করে flutter pub get রান করুন:
+
+dependencies:
+  flutter:
+    sdk: flutter
+  video_player: ^2.9.0  # লাইভ ভিডিও স্ট্রিম প্রসেস করার জন্য
+  chewie: ^1.8.5        # প্লে/পজ বাটনসহ সুন্দর একটি প্লেয়ার ইন্টারফেস দেওয়ার জন্য
+
+------------------------------
+## ২. লাইভ টিভি প্লেয়ার কোড (live_tv_player.dart)
+আপনার প্রজেক্টের lib ফোল্ডারে live_tv_player.dart নামে একটি নতুন ফাইল তৈরি করুন এবং নিচের কোডটি লিখুন:
+
+import 'package:flutter/material.dart';import 'package:video_player/video_player.dart';import 'package:chewie/chewie.dart';
+class LiveTvPlayerScreen extends StatefulWidget {
+  final String streamUrl;
+  final String channelName;
+
+  const LiveTvPlayerScreen({
+    super.key, 
+    required this.streamUrl, 
+    required this.channelName
+  });
+
+  @override
+  State<LiveTvPlayerScreen> createState() => _LiveTvPlayerScreenState();
+}
+class _LiveTvPlayerScreenState extends State<LiveTvPlayerScreen> {
+  late VideoPlayerController _videoPlayerController;
+  ChewieController? _chewieController;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    initializePlayer();
+  }
+
+  // ভিডিও প্লেয়ার চালু করার ফাংশন
+  Future<void> initializePlayer() async {
+    // লাইভ টিভির m3u8 লিংকটি এখানে পাস করা হয়
+    _videoPlayerController = VideoPlayerController.networkUrl(
+      Uri.parse(widget.streamUrl),
+    );
+
+    try {
+      await _videoPlayerController.initialize();
+      
+      // চেউই (Chewie) কন্ট্রোলার সেটআপ
+      _chewieController = ChewieController(
+        videoPlayerController: _videoPlayerController,
+        autoPlay: true, // স্ক্রিন ওপেন হলেই চ্যানেল চালু হবে
+        isLive: true,   // এটি লাইভ স্ট্রিমিং প্যানেল সচল করবে
+        looping: false,
+        aspectRatio: 16 / 9, // টিভি স্ক্রিন রেশিও
+        errorBuilder: (context, errorMessage) {
+          return const Center(
+            child: Text(
+              'এই চ্যানেলটি এই মুহূর্তে অফলাইন আছে।',
+              style: TextStyle(color: Colors.white),
+            ),
+          );
+        },
+      );
+      setState(() {});
+    } catch (e) {
+      setState(() {
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    // মেমোরি লিক বন্ধ করতে প্লেয়ার রিলিজ করা
+    _videoPlayerController.dispose();
+    _chewieController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(widget.channelName),
+        backgroundColor: Colors.black,
+      ),
+      body: Center(
+        child: _hasError
+            ? const Text(
+                'ভিডিও লোড করা যাচ্ছে না!',
+                style: TextStyle(color: Colors.red, fontSize: 16),
+              )
+            : _chewieController != null &&
+                    _chewieController!.videoPlayerController.value.isInitialized
+                ? AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Chewie(controller: _chewieController!),
+                  )
+                : const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(color: Colors.red),
+                      SizedBox(height: 10),
+                      Text('চ্যানেল কানেক্ট হচ্ছে...', style: TextStyle(color: Colors.white)),
+                    ],
+                  ),
+      ),
+    );
+  }
+}
+
+------------------------------
+## ৩. কীভাবে এই প্লেয়ার স্ক্রিনটি আপনার অ্যাপে কল করবেন?
+আপনার মেইন স্ক্রিন বা চ্যানেল লিস্ট স্ক্রিনের যেকোনো বাটনের onPressed-এ নিচের মতো করে ওপেন সোর্স বা ফ্রি আইপিটিভি (m3u8) লিংক দিয়ে স্ক্রিনটি ওপেন করতে পারেন:
+
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => const LiveTvPlayerScreen(
+      // উদাহরণস্বরূপ একটি ফ্রি গ্লোবাল নিউজ চ্যানেলের লিংক দেওয়া হলো
+      streamUrl: 'https://akamaized.net',
+      channelName: 'DD News Live',
+    ),
+  ),
+);
+
+## 💡 ফ্রি এবং লিগাল টিভি চ্যানেলের লিংক কোথায় পাবেন?
+সম্পূর্ণ আইনি ও ফ্রি চ্যানেলগুলোর লিংক পাওয়ার সবচেয়ে বড় এবং জনপ্রিয় প্ল্যাটফর্ম হলো GitHub। আপনি গিটহাবে গিয়ে "free-iptv" বা "iptv-org" লিখে সার্চ করলে হাজার হাজার গ্লোবাল ও লোকাল ফ্রি টেলিভিশন চ্যানেলের আপডেটেড .m3u8 লিংকের লিস্ট (প্লেলিস্ট) পেয়ে যাবেন, যা সরাসরি আপনার এই প্লেয়ারে চলবে।
+লাইভ টিভি প্লেয়ার তো সেটআপ হলো। এর পরবর্তী ধাপ হিসেবে আপনি কোনটি করতে চান?
+গিটহাবের ফ্রি প্লেলিস্ট থেকে এক ক্লিকে অনেকগুলো চ্যানেলের তালিকা (Channel List) অ্যাপে দেখানোর কোড করামুভি এবং লাইভ টিভি একসাথে রাখার জন্য অ্যাপের নিচে একটি সুন্দর Bottom Navigation Bar তৈরি করা
+
