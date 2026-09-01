@@ -98,6 +98,25 @@ export interface WatchProviders {
   buy: WatchProvider[];
 }
 
+export interface LiveTvChannel {
+  id: string;
+  name: string;
+  category: string;
+  streamUrl: string;
+  /** @nullable */
+  logoUrl: string | null;
+  /** @nullable */
+  tvgId: string | null;
+}
+
+export interface LiveTvChannelPage {
+  source: string;
+  fetchedAt: string;
+  total: number;
+  categories: string[];
+  channels: LiveTvChannel[];
+}
+
 export type MediaTypeParameter = typeof MediaTypeParameter[keyof typeof MediaTypeParameter];
 
 
@@ -110,6 +129,22 @@ export type PageParameter = number;
 
 export type GetCatalogHomeParams = {
 type: MediaTypeParameter;
+};
+
+export type ListLiveTvChannelsParams = {
+/**
+ * @maxLength 80
+ */
+query?: string;
+/**
+ * @maxLength 60
+ */
+category?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };
 
 export type DiscoverCatalogParams = {

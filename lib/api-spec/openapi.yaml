@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: catalog
     description: Movie and TV discovery powered by TMDB
+  - name: live-tv
+    description: Public free-to-air live channel discovery
 paths:
   /healthz:
     get:
@@ -42,6 +44,46 @@ paths:
                 $ref: "#/components/schemas/CatalogHome"
         "503":
           description: TMDB is unavailable or not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /live-tv/channels:
+    get:
+      operationId: listLiveTvChannels
+      tags: [live-tv]
+      summary: List free-to-air HLS live channels
+      description: Returns HTTPS HLS entries from the configured public playlist. Rights and regional availability remain the responsibility of each channel operator.
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 80
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 60
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 1
+            maximum: 100
+            default: 48
+      responses:
+        "200":
+          description: Live TV channel directory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveTvChannelPage"
+        "503":
+          description: Public playlist is unavailable
           content:
             application/json:
               schema:
@@ -373,4 +415,38 @@ components:
           items:
             $ref: "#/components/schemas/WatchProvider"
       required: [link, country, flatrate, rent, buy]
+    LiveTvChannel:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        streamUrl:
+          type: string
+        logoUrl:
+          type: [string, "null"]
+        tvgId:
+          type: [string, "null"]
+      required: [id, name, category, streamUrl, logoUrl, tvgId]
+    LiveTvChannelPage:
+      type: object
+      properties:
+        source:
+          type: string
+        fetchedAt:
+          type: string
+        total:
+          type: number
+        categories:
+          type: array
+          items:
+            type: string
+        channels:
+          type: array
+          items:
+            $ref: "#/components/schemas/LiveTvChannel"
+      required: [source, fetchedAt, total, categories, channels]
 

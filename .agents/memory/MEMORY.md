@@ -1,1 +1,2 @@
 - [OpenAPI/Zod compatibility](codegen-zod-compatibility.md) — current Orval output can use `zod.int()`, which is incompatible with this workspace's Zod 3 setup.
+- [Live TV HLS fallback](live-tv-hls-fallback.md) — prefer native authorized HLS playback when the workspace cannot install an HLS helper package.

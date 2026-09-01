@@ -8,6 +8,7 @@ export function CineShell({ children }: { children: ReactNode }) {
   const links = [
     { href: "/", label: "Discover", icon: Home },
     { href: "/search", label: "Find a title", icon: Search },
+    { href: "/live-tv", label: "Live TV", icon: Radio },
     { href: "/watchlist", label: "My list", icon: Heart },
   ];
   const mobileLinks = [
@@ -15,7 +16,7 @@ export function CineShell({ children }: { children: ReactNode }) {
     { href: "/search?type=movie&sort=popular", label: "Movies", icon: Film },
     { href: "/search?type=tv&sort=popular", label: "Series", icon: Tv },
     { href: "/search?query=Anime", label: "Anime", icon: Sparkles },
-    { href: "/search?query=Live%20TV", label: "Live TV", icon: Radio },
+    { href: "/live-tv", label: "Live TV", icon: Radio },
   ];
   const currentPath = location.split("?")[0];
 
@@ -69,7 +70,7 @@ export function CineShell({ children }: { children: ReactNode }) {
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[.09] bg-[#080b13]/95 px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl md:hidden" aria-label="Mobile navigation">
         <div className="mx-auto grid max-w-lg grid-cols-5">
           {mobileLinks.map(({ href, label, icon: Icon }) => {
-            const isActive = href === "/" ? currentPath === "/" : currentPath === "/search" && href.includes("search");
+            const isActive = href === "/" ? currentPath === "/" : href.startsWith("/live-tv") ? currentPath === "/live-tv" : currentPath === "/search" && href.includes("search");
             return (
               <Link
                 key={label}

@@ -22,6 +22,8 @@ import type {
   ErrorResponse,
   GetCatalogHomeParams,
   HealthStatus,
+  ListLiveTvChannelsParams,
+  LiveTvChannelPage,
   MediaDetails,
   SearchCatalogParams,
   Trailer,
@@ -205,6 +207,91 @@ export function useGetCatalogHome<TData = Awaited<ReturnType<typeof getCatalogHo
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetCatalogHomeQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListLiveTvChannelsUrl = (params?: ListLiveTvChannelsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/live-tv/channels?${stringifiedParams}` : `/api/live-tv/channels`
+}
+
+/**
+ * Returns HTTPS HLS entries from the configured public playlist. Rights and regional availability remain the responsibility of each channel operator.
+ * @summary List free-to-air HLS live channels
+ */
+export const listLiveTvChannels = async (params?: ListLiveTvChannelsParams, options?: Parameters<typeof customFetch>[1]): Promise<LiveTvChannelPage> => {
+
+  return customFetch<LiveTvChannelPage>(getListLiveTvChannelsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLiveTvChannelsQueryKey = (params?: ListLiveTvChannelsParams,) => {
+    return [
+    `/api/live-tv/channels`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListLiveTvChannelsQueryOptions = <TData = Awaited<ReturnType<typeof listLiveTvChannels>>, TError = ErrorType<ErrorResponse>>(params?: ListLiveTvChannelsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLiveTvChannels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLiveTvChannelsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLiveTvChannels>>> = ({ signal }) => listLiveTvChannels(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLiveTvChannels>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLiveTvChannelsQueryResult = NonNullable<Awaited<ReturnType<typeof listLiveTvChannels>>>
+export type ListLiveTvChannelsQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary List free-to-air HLS live channels
+ */
+
+export function useListLiveTvChannels<TData = Awaited<ReturnType<typeof listLiveTvChannels>>, TError = ErrorType<ErrorResponse>>(
+ params?: ListLiveTvChannelsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLiveTvChannels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLiveTvChannelsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

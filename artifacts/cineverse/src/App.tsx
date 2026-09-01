@@ -8,6 +8,7 @@ import { CineShell } from '@/components/cine-shell';
 import HomePage from '@/pages/home';
 import SearchPage from '@/pages/search';
 import WatchlistPage from '@/pages/watchlist';
+import LiveTvPage from '@/pages/live-tv';
 import {
   Route,
   Switch,
@@ -26,6 +27,7 @@ function Router() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/search" component={SearchPage} />
+          <Route path="/live-tv" component={LiveTvPage} />
           <Route path="/watchlist" component={WatchlistPage} />
           <Route component={NotFound} />
         </Switch>

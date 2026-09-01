@@ -57,6 +57,41 @@ export const GetCatalogHomeResponse = zod.object({
 
 
 /**
+ * Returns HTTPS HLS entries from the configured public playlist. Rights and regional availability remain the responsibility of each channel operator.
+ * @summary List free-to-air HLS live channels
+ */
+export const listLiveTvChannelsQueryQueryMax = 80;
+
+export const listLiveTvChannelsQueryCategoryMax = 60;
+
+export const listLiveTvChannelsQueryLimitDefault = 48;
+export const listLiveTvChannelsQueryLimitMax = 100;
+
+
+
+export const ListLiveTvChannelsQueryParams = zod.object({
+  "query": zod.coerce.string().max(listLiveTvChannelsQueryQueryMax).optional(),
+  "category": zod.coerce.string().max(listLiveTvChannelsQueryCategoryMax).optional(),
+  "limit": zod.coerce.number().min(1).max(listLiveTvChannelsQueryLimitMax).default(listLiveTvChannelsQueryLimitDefault)
+})
+
+export const ListLiveTvChannelsResponse = zod.object({
+  "source": zod.string(),
+  "fetchedAt": zod.string(),
+  "total": zod.number(),
+  "categories": zod.array(zod.string()),
+  "channels": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "streamUrl": zod.string(),
+  "logoUrl": zod.string().nullable(),
+  "tvgId": zod.string().nullable()
+}))
+})
+
+
+/**
  * @summary Discover movies or TV shows
  */
 export const discoverCatalogQueryPageDefault = 1;
