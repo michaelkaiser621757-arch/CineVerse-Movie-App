@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface MediaPerson {
+  id: number;
+  name: string;
+  role: string;
+  /** @nullable */
+  profilePath: string | null;
 }

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: catalog
+    description: Movie and TV discovery powered by TMDB
 paths:
   /healthz:
     get:
@@ -24,7 +26,199 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /catalog/home:
+    get:
+      operationId: getCatalogHome
+      tags: [catalog]
+      summary: Get the home page catalog
+      parameters:
+        - $ref: "#/components/parameters/MediaType"
+      responses:
+        "200":
+          description: Curated discovery sections
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogHome"
+        "503":
+          description: TMDB is unavailable or not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /catalog/discover:
+    get:
+      operationId: discoverCatalog
+      tags: [catalog]
+      summary: Discover movies or TV shows
+      parameters:
+        - $ref: "#/components/parameters/MediaType"
+        - $ref: "#/components/parameters/Page"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [trending, popular, top-rated, upcoming]
+            default: trending
+        - name: language
+          in: query
+          schema:
+            type: string
+            pattern: "^[a-z]{2}$"
+        - name: genre
+          in: query
+          schema:
+            type: number
+        - name: yearFrom
+          in: query
+          schema:
+            type: number
+            minimum: 1900
+        - name: yearTo
+          in: query
+          schema:
+            type: number
+            minimum: 1900
+        - name: ratingFrom
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            maximum: 10
+      responses:
+        "200":
+          description: Paginated discovery results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogPage"
+        "503":
+          description: TMDB is unavailable or not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /catalog/search:
+    get:
+      operationId: searchCatalog
+      tags: [catalog]
+      summary: Search movies and TV shows
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 80
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogPage"
+        "503":
+          description: TMDB is unavailable or not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /catalog/media/{type}/{id}:
+    get:
+      operationId: getCatalogMedia
+      tags: [catalog]
+      summary: Get a title with credits and similar titles
+      parameters:
+        - $ref: "#/components/parameters/PathMediaType"
+        - $ref: "#/components/parameters/MediaId"
+      responses:
+        "200":
+          description: Media details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaDetails"
+        "503":
+          description: TMDB is unavailable or not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /catalog/media/{type}/{id}/trailer:
+    get:
+      operationId: getCatalogTrailer
+      tags: [catalog]
+      summary: Get an official YouTube trailer
+      parameters:
+        - $ref: "#/components/parameters/PathMediaType"
+        - $ref: "#/components/parameters/MediaId"
+      responses:
+        "200":
+          description: Trailer result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trailer"
+        "503":
+          description: TMDB is unavailable or not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /catalog/media/{type}/{id}/watch-providers:
+    get:
+      operationId: getCatalogWatchProviders
+      tags: [catalog]
+      summary: Get legal watch provider information
+      parameters:
+        - $ref: "#/components/parameters/PathMediaType"
+        - $ref: "#/components/parameters/MediaId"
+      responses:
+        "200":
+          description: Watch provider result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchProviders"
+        "503":
+          description: TMDB is unavailable or not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
+  parameters:
+    MediaType:
+      name: type
+      in: query
+      required: true
+      schema:
+        type: string
+        enum: [movie, tv]
+    PathMediaType:
+      name: type
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [movie, tv]
+    MediaId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: number
+        minimum: 1
+    Page:
+      name: page
+      in: query
+      schema:
+        type: number
+        minimum: 1
+        maximum: 500
+        default: 1
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +227,150 @@ components:
           type: string
       required:
         - status
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    Media:
+      type: object
+      properties:
+        id:
+          type: number
+        mediaType:
+          type: string
+          enum: [movie, tv]
+        title:
+          type: string
+        overview:
+          type: string
+        posterPath:
+          type: [string, "null"]
+        backdropPath:
+          type: [string, "null"]
+        releaseDate:
+          type: [string, "null"]
+        rating:
+          type: number
+        popularity:
+          type: number
+        genres:
+          type: array
+          items:
+            type: string
+      required: [id, mediaType, title, overview, posterPath, backdropPath, releaseDate, rating, popularity, genres]
+    CatalogSection:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Media"
+      required: [id, title, items]
+    CatalogHome:
+      type: object
+      properties:
+        hero:
+          type: array
+          items:
+            $ref: "#/components/schemas/Media"
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogSection"
+      required: [hero, sections]
+    CatalogPage:
+      type: object
+      properties:
+        page:
+          type: number
+        totalPages:
+          type: number
+        totalResults:
+          type: number
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Media"
+      required: [page, totalPages, totalResults, results]
+    MediaPerson:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        role:
+          type: string
+        profilePath:
+          type: [string, "null"]
+      required: [id, name, role, profilePath]
+    MediaDetails:
+      allOf:
+        - $ref: "#/components/schemas/Media"
+        - type: object
+          properties:
+            runtime:
+              type: [number, "null"]
+            seasons:
+              type: [number, "null"]
+            cast:
+              type: array
+              items:
+                $ref: "#/components/schemas/MediaPerson"
+            crew:
+              type: array
+              items:
+                $ref: "#/components/schemas/MediaPerson"
+            similar:
+              type: array
+              items:
+                $ref: "#/components/schemas/Media"
+          required: [runtime, seasons, cast, crew, similar]
+    Trailer:
+      type: object
+      properties:
+        available:
+          type: boolean
+        name:
+          type: [string, "null"]
+        key:
+          type: [string, "null"]
+        url:
+          type: [string, "null"]
+      required: [available, name, key, url]
+    WatchProvider:
+      type: object
+      properties:
+        name:
+          type: string
+        logoPath:
+          type: [string, "null"]
+      required: [name, logoPath]
+    WatchProviders:
+      type: object
+      properties:
+        link:
+          type: [string, "null"]
+        country:
+          type: string
+        flatrate:
+          type: array
+          items:
+            $ref: "#/components/schemas/WatchProvider"
+        rent:
+          type: array
+          items:
+            $ref: "#/components/schemas/WatchProvider"
+        buy:
+          type: array
+          items:
+            $ref: "#/components/schemas/WatchProvider"
+      required: [link, country, flatrate, rent, buy]
 

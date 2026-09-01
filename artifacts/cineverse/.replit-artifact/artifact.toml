@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CineVerse"
+description = "A cinematic movie and TV discovery app powered by TMDB, with a premium streaming-inspired home experience, search, filters, trailers, legal watch options, and a personal watchlist."
+version = "1.0.0"
+id = "artifacts/cineverse"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25877
+
+[services.development]
+run = "pnpm --filter @workspace/cineverse run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cineverse", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/cineverse/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25877"
+BASE_PATH = "/"

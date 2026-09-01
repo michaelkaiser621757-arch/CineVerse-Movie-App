@@ -1,0 +1,1 @@
+- [OpenAPI/Zod compatibility](codegen-zod-compatibility.md) — current Orval output can use `zod.int()`, which is incompatible with this workspace's Zod 3 setup.
