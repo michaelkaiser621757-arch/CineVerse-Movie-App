@@ -9,6 +9,7 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import router from "./routes";
+import streamingRoutes from "./routes/streaming";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
@@ -47,5 +48,6 @@ app.use(
 );
 
 app.use("/api", router);
+app.use("/api", streamingRoutes);
 
 export default app;
