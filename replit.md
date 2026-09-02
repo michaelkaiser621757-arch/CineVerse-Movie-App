@@ -26,12 +26,15 @@ CineVerse is a cinematic movie and TV discovery app with live TMDB catalog data,
 - `artifacts/cineverse/src/` — CineVerse React UI, routes, catalog rails, Live TV directory/player, details modal, and local watchlist
 - `artifacts/api-server/src/routes/catalog.ts` — server-side TMDB proxy and response normalization
 - `artifacts/api-server/src/routes/live-tv.ts` — cached public playlist parser for HTTPS HLS Live TV entries
+- `artifacts/api-server/src/middlewares/clerkProxyMiddleware.ts` — production Clerk frontend API proxy
+- `docs/cineverse-global-integrations.md` — GitHub sources, auth limits, logo fallback, health checks, and global data model
 - `lib/api-spec/openapi.yaml` — source of truth for the catalog API contract
 - `artifacts/cineverse/src/index.css` — CineVerse theme tokens and cinematic styling
 
 ## Architecture decisions
 
 - TMDB access is proxied through the shared API server; the API key is never shipped to the browser.
+- Clerk authentication is managed through Replit's Auth pane; the browser uses same-origin session cookies and the API validates sessions with Clerk middleware.
 - CineVerse does not embed unknown third-party streaming servers. It provides official YouTube trailers and TMDB legal provider links instead.
 - Watchlist data is intentionally local to the browser until authentication is requested, so the first version works without inventing a local auth system.
 - The frontend consumes generated hooks from the OpenAPI contract rather than hand-written fetch calls.
@@ -43,6 +46,8 @@ CineVerse is a cinematic movie and TV discovery app with live TMDB catalog data,
 - Open title details with cast, similar titles, official trailer, and legal availability by region.
 - Save and remove titles from a persistent personal watchlist stored in localStorage.
 - Browse, search, filter, and open public free-to-air Live TV channels from the Live TV directory.
+- Filter Live TV by country and filter TMDB discovery by country and original language.
+- Sign in or register through the branded Clerk flow; provider availability is controlled by the Replit Auth pane.
 
 ## User preferences
 
@@ -55,6 +60,8 @@ CineVerse is a cinematic movie and TV discovery app with live TMDB catalog data,
 - After changing `lib/api-spec/openapi.yaml`, run `pnpm --filter @workspace/api-spec run codegen`.
 - The current app uses local watchlist persistence; cross-device lists require adding authentication and a server-backed user model later.
 - Live TV uses native browser HLS playback; browser support depends on the channel stream and the browser. Only HTTPS HLS entries are surfaced, while channel rights remain the broadcaster's responsibility.
+- Replit-managed Clerk currently supports Google and selected social providers, but not Facebook; do not add a fake Facebook OAuth button.
+- Logo URLs are proxied only after being observed in the loaded iptv-org playlist, with HTTPS and size checks plus a transparent fallback.
 
 ## Pointers
 

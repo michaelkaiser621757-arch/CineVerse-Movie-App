@@ -101,6 +101,7 @@ export const discoverCatalogQueryPageMax = 500;
 
 export const discoverCatalogQuerySortDefault = `trending`;
 export const discoverCatalogQueryLanguageRegExp = new RegExp('^[a-z]{2}$');
+export const discoverCatalogQueryCountryRegExp = new RegExp('^[a-zA-Z]{2}$');
 export const discoverCatalogQueryYearFromMin = 1900;
 
 export const discoverCatalogQueryYearToMin = 1900;
@@ -115,6 +116,7 @@ export const DiscoverCatalogQueryParams = zod.object({
   "page": zod.coerce.number().min(1).max(discoverCatalogQueryPageMax).default(discoverCatalogQueryPageDefault),
   "sort": zod.enum(['trending', 'popular', 'top-rated', 'upcoming']).default(discoverCatalogQuerySortDefault),
   "language": zod.coerce.string().regex(discoverCatalogQueryLanguageRegExp).optional(),
+  "country": zod.coerce.string().regex(discoverCatalogQueryCountryRegExp).optional().describe('ISO 3166-1 alpha-2 country of origin'),
   "genre": zod.coerce.number().optional(),
   "yearFrom": zod.coerce.number().min(discoverCatalogQueryYearFromMin).optional(),
   "yearTo": zod.coerce.number().min(discoverCatalogQueryYearToMin).optional(),

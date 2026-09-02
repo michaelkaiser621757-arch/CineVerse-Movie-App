@@ -33,6 +33,25 @@ function channelMark(name: string) {
     .toUpperCase() || "TV";
 }
 
+function ChannelLogo({ channel }: { channel: LiveTvChannel }) {
+  const [failed, setFailed] = useState(false);
+  const apiBasePath = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api`;
+
+  if (!channel.logoUrl || failed) {
+    return <span aria-hidden="true">{channelMark(channel.name)}</span>;
+  }
+
+  return (
+    <img
+      src={`${apiBasePath}/live-tv/logo?url=${encodeURIComponent(channel.logoUrl)}`}
+      alt=""
+      loading="lazy"
+      className="max-h-full max-w-full object-contain p-2"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export default function LiveTvPage() {
   const [input, setInput] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
@@ -90,7 +109,7 @@ export default function LiveTvPage() {
           <span className="font-mono-cine text-[10px] uppercase tracking-[.14em] text-muted-foreground">{channelsQuery.data?.total ?? 0} available</span>
         </div>
 
-        {channelsQuery.isLoading ? <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 12 }).map((_, index) => <div key={index} className="h-24 rounded-xl skeleton-shimmer" />)}</div> : channelsQuery.isError ? <div className="mt-7 rounded-2xl border border-destructive/25 bg-destructive/[.07] p-8 text-center"><AlertTriangle className="mx-auto text-destructive" size={23} /><p className="mt-3 font-display text-xl font-bold">The signal is quiet.</p><p className="mt-2 text-sm text-muted-foreground">The public channel directory could not be loaded right now.</p><button type="button" data-testid="button-retry-live-tv" onClick={() => channelsQuery.refetch()} className="mt-5 rounded-lg bg-primary px-4 py-2.5 text-xs font-extrabold text-primary-foreground">Retry directory</button></div> : channels.length ? <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{channels.map((channel, index) => <button type="button" key={`${channel.id}-${index}`} data-testid={`button-live-channel-${index}`} onClick={() => setSelected(channel)} className="group flex min-h-24 items-center gap-4 rounded-xl border border-white/[.09] bg-card/75 p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-xl hover:shadow-black/20 focus-visible:-translate-y-0.5"><span className="grid size-14 shrink-0 place-items-center rounded-xl border border-primary/20 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/.32),transparent_60%),hsl(var(--muted))] font-display text-sm font-bold tracking-[-.03em] text-primary">{channelMark(channel.name)}</span><span className="min-w-0 flex-1"><span className="block truncate font-display text-sm font-bold text-foreground">{channel.name}</span><span className="mt-1 block truncate text-[10px] uppercase tracking-[.12em] text-muted-foreground">{channel.category}</span></span><span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary opacity-70 transition group-hover:bg-primary group-hover:text-primary-foreground group-hover:opacity-100"><Play size={14} fill="currentColor" /></span></button>)}</div> : <div className="mt-7 rounded-2xl border border-dashed border-white/15 bg-card/50 px-6 py-16 text-center"><Radio className="mx-auto text-muted-foreground" size={24} /><p className="mt-4 font-display text-xl font-bold">No channels found.</p><p className="mt-2 text-sm text-muted-foreground">Try another channel name or category.</p></div>}
+        {channelsQuery.isLoading ? <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 12 }).map((_, index) => <div key={index} className="h-24 rounded-xl skeleton-shimmer" />)}</div> : channelsQuery.isError ? <div className="mt-7 rounded-2xl border border-destructive/25 bg-destructive/[.07] p-8 text-center"><AlertTriangle className="mx-auto text-destructive" size={23} /><p className="mt-3 font-display text-xl font-bold">The signal is quiet.</p><p className="mt-2 text-sm text-muted-foreground">The public channel directory could not be loaded right now.</p><button type="button" data-testid="button-retry-live-tv" onClick={() => channelsQuery.refetch()} className="mt-5 rounded-lg bg-primary px-4 py-2.5 text-xs font-extrabold text-primary-foreground">Retry directory</button></div> : channels.length ? <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{channels.map((channel, index) => <button type="button" key={`${channel.id}-${index}`} data-testid={`button-live-channel-${index}`} onClick={() => setSelected(channel)} className="group flex min-h-24 items-center gap-4 rounded-xl border border-white/[.09] bg-card/75 p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-xl hover:shadow-black/20 focus-visible:-translate-y-0.5"><span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-xl border border-primary/20 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/.32),transparent_60%),hsl(var(--muted))] font-display text-sm font-bold tracking-[-.03em] text-primary"><ChannelLogo channel={channel} /></span><span className="min-w-0 flex-1"><span className="block truncate font-display text-sm font-bold text-foreground">{channel.name}</span><span className="mt-1 block truncate text-[10px] uppercase tracking-[.12em] text-muted-foreground">{channel.category}</span></span><span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary opacity-70 transition group-hover:bg-primary group-hover:text-primary-foreground group-hover:opacity-100"><Play size={14} fill="currentColor" /></span></button>)}</div> : <div className="mt-7 rounded-2xl border border-dashed border-white/15 bg-card/50 px-6 py-16 text-center"><Radio className="mx-auto text-muted-foreground" size={24} /><p className="mt-4 font-display text-xl font-bold">No channels found.</p><p className="mt-2 text-sm text-muted-foreground">Try another channel name or category.</p></div>}
       </div>
       {selected && <LiveTvPlayer channel={selected} onClose={() => setSelected(null)} />}
     </div>

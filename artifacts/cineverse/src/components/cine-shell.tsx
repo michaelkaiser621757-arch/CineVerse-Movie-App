@@ -1,6 +1,30 @@
 import { Film, Heart, Home, Menu, Radio, Search, Sparkles, Tv, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { Show, useClerk, useUser } from "@clerk/react";
 import { Link, useLocation } from "wouter";
+
+function AccountControl() {
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const label = user?.firstName || user?.emailAddresses[0]?.emailAddress?.split("@")[0] || "Account";
+  const initials = label.slice(0, 2).toUpperCase();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  return (
+    <>
+      <Show when="signed-out">
+        <Link href="/sign-in" data-testid="link-sign-in" className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-[11px] font-bold text-primary transition hover:bg-primary hover:text-primary-foreground">
+          Sign in
+        </Link>
+      </Show>
+      <Show when="signed-in">
+        <button type="button" data-testid="button-sign-out" aria-label={`Sign out ${label}`} onClick={() => signOut({ redirectUrl: basePath || "/" })} className="grid size-9 place-items-center rounded-full border border-primary/40 bg-primary/10 font-mono-cine text-[10px] font-medium text-primary transition hover:bg-primary hover:text-primary-foreground">
+          {initials}
+        </button>
+      </Show>
+    </>
+  );
+}
 
 export function CineShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -45,7 +69,7 @@ export function CineShell({ children }: { children: ReactNode }) {
             <button type="button" data-testid="button-mobile-menu" aria-label="Open navigation" onClick={() => setOpen(true)} className="grid size-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-white/[.08] hover:text-foreground md:hidden">
               <Menu size={20} />
             </button>
-            <span className="ml-2 grid size-9 place-items-center rounded-full border border-primary/40 bg-primary/10 font-mono-cine text-[10px] font-medium text-primary sm:size-8">CV</span>
+            <span className="ml-2"><AccountControl /></span>
           </div>
         </div>
       </header>

@@ -8,7 +8,13 @@ const router: IRouter = Router();
 const PLAYLIST_URL = "https://iptv-org.github.io/iptv/index.m3u";
 const COUNTRY_PLAYLIST_URL = "https://iptv-org.github.io/iptv/countries";
 const CACHE_TTL_MS = 10 * 60 * 1000;
+const LOGO_CACHE_TTL_MS = 60 * 60 * 1000;
+const MAX_LOGO_BYTES = 512 * 1024;
 const REQUEST_TIMEOUT_MS = 20_000;
+const EMPTY_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64",
+);
 
 type LiveTvChannel = {
   id: string;
@@ -26,6 +32,8 @@ type PlaylistCache = {
 };
 
 const playlistCaches = new Map<string, PlaylistCache>();
+const knownLogoUrls = new Set<string>();
+const logoCache = new Map<string, { body: Buffer; contentType: string; expiresAt: number }>();
 
 function attribute(line: string, name: string): string | null {
   const match = line.match(new RegExp(`${name}="([^"]*)"`, "i"));
@@ -104,6 +112,9 @@ async function getPlaylistChannels(country?: string): Promise<PlaylistCache> {
     if (!response.ok) throw new Error(`Playlist request failed with status ${response.status}`);
     const channels = parsePlaylist(await response.text());
     if (!channels.length) throw new Error("Playlist returned no supported HTTPS HLS channels");
+    for (const channel of channels) {
+      if (channel.logoUrl) knownLogoUrls.add(channel.logoUrl);
+    }
 
     const nextCache: PlaylistCache = {
       channels,
@@ -116,6 +127,65 @@ async function getPlaylistChannels(country?: string): Promise<PlaylistCache> {
     clearTimeout(timeout);
   }
 }
+
+router.get("/live-tv/logo", async (req, res): Promise<void> => {
+  const rawUrl = typeof req.query.url === "string" ? req.query.url : "";
+  if (!knownLogoUrls.has(rawUrl)) {
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.type("png").send(EMPTY_PNG);
+    return;
+  }
+
+  const cached = logoCache.get(rawUrl);
+  if (cached && cached.expiresAt > Date.now()) {
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.type(cached.contentType).send(cached.body);
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const logoUrl = new URL(rawUrl);
+    if (logoUrl.protocol !== "https:") {
+      res.type("png").send(EMPTY_PNG);
+      return;
+    }
+
+    const response = await fetch(logoUrl, {
+      headers: { Accept: "image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8" },
+      signal: controller.signal,
+    });
+    const contentType = response.headers.get("content-type")?.split(";")[0] || "";
+    const contentLength = Number(response.headers.get("content-length") || 0);
+    if (!response.ok || !contentType.startsWith("image/") || contentLength > MAX_LOGO_BYTES) {
+      res.setHeader("Cache-Control", "public, max-age=900");
+      res.type("png").send(EMPTY_PNG);
+      return;
+    }
+
+    const body = Buffer.from(await response.arrayBuffer());
+    if (body.length > MAX_LOGO_BYTES) {
+      res.setHeader("Cache-Control", "public, max-age=900");
+      res.type("png").send(EMPTY_PNG);
+      return;
+    }
+
+    logoCache.set(rawUrl, {
+      body,
+      contentType,
+      expiresAt: Date.now() + LOGO_CACHE_TTL_MS,
+    });
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.type(contentType).send(body);
+  } catch (error) {
+    req.log.debug({ err: error, logoUrl: rawUrl }, "Live TV logo unavailable");
+    res.setHeader("Cache-Control", "public, max-age=900");
+    res.type("png").send(EMPTY_PNG);
+  } finally {
+    clearTimeout(timeout);
+  }
+});
 
 router.get("/live-tv/channels", async (req, res): Promise<void> => {
   const parsed = ListLiveTvChannelsQueryParams.safeParse(req.query);

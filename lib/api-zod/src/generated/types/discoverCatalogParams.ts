@@ -21,6 +21,11 @@ sort?: DiscoverCatalogSort;
  * @pattern ^[a-z]{2}$
  */
 language?: string;
+/**
+ * ISO 3166-1 alpha-2 country of origin
+ * @pattern ^[a-zA-Z]{2}$
+ */
+country?: string;
 genre?: number;
 /**
  * @minimum 1900

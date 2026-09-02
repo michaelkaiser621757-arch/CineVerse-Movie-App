@@ -201,15 +201,25 @@ router.get("/catalog/discover", async (req, res): Promise<void> => {
     return;
   }
 
-  const { type, page, sort, language, genre, yearFrom, yearTo, ratingFrom } = parsed.data;
-  const selected = tmdbPathForSort(type, sort);
+  const { type, page, sort, language, country, genre, yearFrom, yearTo, ratingFrom } = parsed.data;
+  const hasDiscoverFilters = Boolean(
+    language || country || genre || yearFrom !== undefined || yearTo !== undefined || ratingFrom !== undefined,
+  );
+  const selected = hasDiscoverFilters
+    ? { path: `/discover/${type}` }
+    : tmdbPathForSort(type, sort);
   const params: Record<string, string> = {
     page: String(page),
   };
   if (selected.path.startsWith("/discover/")) {
-    params.sort_by = sort === "top-rated" ? "vote_average.desc" : "popularity.desc";
+    params.sort_by = sort === "top-rated"
+      ? "vote_average.desc"
+      : sort === "upcoming"
+        ? `${type === "movie" ? "primary_release_date" : "first_air_date"}.asc`
+        : "popularity.desc";
   }
   if (language) params.with_original_language = language;
+  if (country) params.with_origin_country = country.toUpperCase();
   if (genre) params.with_genres = String(genre);
   if (ratingFrom !== undefined) params["vote_average.gte"] = String(ratingFrom);
   if (yearFrom !== undefined || yearTo !== undefined) {
